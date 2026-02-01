@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花色皇冠开奖游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", Arial, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+        /* 游戏容器 */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        /* 积分显示 */
+        .score-box {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 10px;
+            border: 1px solid #ffd700;
+        }
+        .score {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        /* 目标选择区 */
+        .targets {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        }
+        .target {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            background: rgba(255,255,255,0.08);
+        }
+        .target.active {
+            background: rgba(255,215,0,0.2);
+            border-color: #ffd700;
+            transform: scale(1.05);
+        }
+        .target:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .crown {
+            font-size: 28px;
+        }
+        /* 语音播报音量调节区 */
+        .volume-box {
+            margin: 15px 0 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .volume-text {
+            font-size: 14px;
+            color: #ffd700;
+            width: 80px;
+        }
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+        .volume-value {
+            font-size: 14px;
+            color: #ccc;
+            width: 40px;
+            text-align: center;
+        }
+        /* 新增：中奖次数统计区 */
+        .count-box {
+            margin: 20px 0 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 10px;
+            border: 1px solid rgba(255,215,0,0.1);
+        }
+        .count-title {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .count-reset {
+            font-size: 12px;
+            color: #ccc;
+            cursor: pointer;
+        }
+        .count-reset:hover {
+            color: #f44336;
+        }
+        .count-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .count-item {
+            padding: 8px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+        .count-item .icon {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .count-item .num {
+            font-size: 14px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        /* 押注区 */
+        .bet-box {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .bet-input {
+            width: 100px;
+            padding: 10px;
+            font-size: 18px;
+            text-align: center;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            margin: 0 10px;
+        }
+        .bet-input:focus {
+            outline: none;
+            border-color: #fff;
+        }
+        /* 按钮区 */
+        .btn-box {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-bet {
+            background: #4CAF50;
+            color: #fff;
+        }
+        .btn-bet:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #ff9800;
+            color: #fff;
+        }
+        /* 开奖结果区 */
+        .result-box {
+            margin-top: 25px;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .result-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .result-icon {
+            font-size: 50px;
+            margin: 15px 0;
+            animation: bounce 0.8s ease;
+        }
+        .result-desc {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .win {
+            color: #4CAF50;
+        }
+        .lose {
+            color: #f44336;
+        }
+        /* 开奖历史记录 */
+        .history-box {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .history-title {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-clear {
+            font-size: 12px;
+            color: #ccc;
+            cursor: pointer;
+        }
+        .history-clear:hover {
+            color: #f44336;
+        }
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        .history-item {
+            padding: 8px 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .history-item .icon {
+            font-size: 18px;
+            margin-bottom: 3px;
+        }
+        .history-item .crown-icon { /* 皇冠记录高亮 */
+            color: #ffd700;
+        }
+        .history-item .num {
+            font-size: 10px;
+            color: #ccc;
+        }
+        /* 动画 */
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        /* 提示文本 */
+        .tip {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #ccc;
+            text-align: center;
+        }
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 积分显示 -->
+        <div class="score-box">
+            当前积分：<span class="score" id="score">1000</span>
+        </div>
+
+        <!-- 目标选择（♠️♥️♣️♦️皇冠） -->
+        <div class="targets">
+            <div class="target" data-target="spade" data-rate="3.8">♠️</div>
+            <div class="target" data-target="heart" data-rate="4">♥️</div>
+            <div class="target" data-target="club" data-rate="4">♣️</div>
+            <div class="target" data-target="diamond" data-rate="4">♦️</div>
+            <div class="target crown" data-target="crown" data-rate="4">👑</div>
+        </div>
+
+        <!-- 语音播报音量调节区 -->
+        <div class="volume-box">
+            <span class="volume-text">播报音量</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+            <span class="volume-value" id="volumeValue">80%</span>
+        </div>
+
+        <!-- 新增：中奖次数统计区 -->
+        <div class="count-box">
+            <div class="count-title">
+                各目标中奖次数
+                <span class="count-reset" id="resetCount">重置统计</span>
+            </div>
+            <div class="count-list">
+                <div class="count-item">
+                    <div class="icon">♠️</div>
+                    <div class="num" id="count-spade">0</div>
+                </div>
+                <div class="count-item">
+                    <div class="icon">♥️</div>
+                    <div class="num" id="count-heart">0</div>
+                </div>
+                <div class="count-item">
+                    <div class="icon">♣️</div>
+                    <div class="num" id="count-club">0</div>
+                </div>
+                <div class="count-item">
+                    <div class="icon">♦️</div>
+                    <div class="num" id="count-diamond">0</div>
+                </div>
+                <div class="count-item">
+                    <div class="icon">👑</div>
+                    <div class="num" id="count-crown">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 押注区 -->
+        <div class="bet-box">
+            押注积分：
+            <input type="number" class="bet-input" id="betNum" min="1" value="10" placeholder="1-当前积分">
+        </div>
+
+        <!-- 按钮区 -->
+        <div class="btn-box">
+            <button class="btn btn-bet" id="betBtn">确认押注并开奖</button>
+            <button class="btn btn-reset" id="resetBtn">重置选择</button>
+        </div>
+
+        <!-- 开奖结果 -->
+        <div class="result-box" id="resultBox">
+            <div class="result-title">等待开奖...</div>
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-desc" id="resultDesc"></div>
+        </div>
+
+        <!-- 开奖历史记录 -->
+        <div class="history-box">
+            <div class="history-title">
+                开奖历史（近100期）
+                <span class="history-clear" id="clearHistory">清空记录</span>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+
+        <!-- 规则提示 -->
+        <div class="tip">
+            ✅ 选1-4目标押注 | 👑皇冠3%概率 | ♠️3.8倍|其余4倍 | 语音播报+音量调节 | 中奖统计+100期历史
+        </div>
+    </div>
+
+    <!-- 音效（中奖/未中奖音） -->
+    <audio id="winAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto">
+    <audio id="loseAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3" preload="auto">
+
+    <script>
+        // 全局变量（新增中奖统计相关）
+        let currentScore = 1000; // 初始积分
+        let selectedTargets = []; // 选中的目标
+        const crownProb = 0.03; // 皇冠概率3%（2%-5%可调）
+        let historyList = []; // 开奖历史数组
+        const maxHistory = 100; // 最多保留100期
+        let issueNum = 1; // 期数自增
+        const synth = window.speechSynthesis; // 语音播报核心对象
+        let broadcastVolume = 0.8; // 初始音量80%（对应0-1）
+        // 新增：5个目标中奖次数统计（初始0）
+        let winCount = {
+            spade: 0, // 黑桃
+            heart: 0, // 红桃
+            club: 0,  // 梅花
+            diamond: 0,// 方块
+            crown: 0  // 皇冠
+        };
+
+        // 获取DOM元素（新增统计相关DOM）
+        const scoreEl = document.getElementById('score');
+        const targetEls = document.querySelectorAll('.target');
+        const betNumEl = document.getElementById('betNum');
+        const betBtn = document.getElementById('betBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultBox = document.getElementById('resultBox');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultDesc = document.getElementById('resultDesc');
+        const historyListEl = document.getElementById('historyList');
+        const clearHistoryEl = document.getElementById('clearHistory');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const resetCountEl = document.getElementById('resetCount');
+        // 新增：统计数字DOM
+        const countSpade = document.getElementById('count-spade');
+        const countHeart = document.getElementById('count-heart');
+        const countClub = document.getElementById('count-club');
+        const countDiamond = document.getElementById('count-diamond');
+        const countCrown = document.getElementById('count-crown');
+        // 音效元素
+        const winAudio = document.getElementById('winAudio');
+        const loseAudio = document.getElementById('loseAudio');
+
+        // 初始化
+        init();
+        function init() {
+            updateScore();
+            bindEvents();
+            initVolume(); // 初始化音量
+            updateWinCount(); // 初始化统计显示
+        }
+
+        // 绑定事件（新增重置统计事件）
+        function bindEvents() {
+            // 选择目标（1-4个）
+            targetEls.forEach(el => {
+                el.addEventListener('click', () => {
+                    const target = el.dataset.target;
+                    if (el.classList.contains('active')) {
+                        el.classList.remove('active');
+                        selectedTargets = selectedTargets.filter(item => item.target !== target);
+                    } else {
+                        if (selectedTargets.length >= 4) {
+                            alert('最多只能选择4个目标哦！');
+                            return;
+                        }
+                        el.classList.add('active');
+                        selectedTargets.push({ target: target, rate: parseFloat(el.dataset.rate) });
+                    }
+                });
+            });
+
+            // 确认押注开奖
+            betBtn.addEventListener('click', handleBet);
+            // 重置选择
+            resetBtn.addEventListener('click', resetSelect);
+            // 清空历史记录
+            clearHistoryEl.addEventListener('click', () => {
+                if (confirm('确定要清空所有开奖历史吗？')) {
+                    historyList = [];
+                    issueNum = 1;
+                    renderHistory();
+                }
+            });
+            // 音量滑块拖动事件（实时更新）
+            volumeSlider.addEventListener('input', handleVolumeChange);
+            // 新增：重置中奖统计
+            resetCountEl.addEventListener('click', () => {
+                if (confirm('确定要重置所有中奖次数统计吗？')) {
+                    winCount = { spade:0, heart:0, club:0, diamond:0, crown:0 };
+                    updateWinCount();
+                }
+            });
+        }
+
+        // 初始化音量显示
+        function initVolume() {
+            volumeSlider.value = broadcastVolume * 100;
+            volumeValue.innerText = `${broadcastVolume * 100}%`;
+        }
+
+        // 音量变化处理（实时生效）
+        function handleVolumeChange() {
+            const vol = parseInt(volumeSlider.value) / 100;
+            broadcastVolume = vol;
+            volumeValue.innerText = `${volumeSlider.value}%`;
+        }
+
+        // 押注处理
+        function handleBet() {
+            const betNum = parseInt(betNumEl.value);
+            // 校验规则
+            if (selectedTargets.length === 0) { alert('请先选1-4个目标！'); return; }
+            if (isNaN(betNum) || betNum < 1) { alert('押注积分必须大于0！'); return; }
+            if (betNum > currentScore) { alert('积分不足！'); return; }
+
+            betBtn.disabled = true;
+            currentScore -= betNum;
+            updateScore();
+            // 模拟开奖延迟（更真实）
+            setTimeout(() => {
+                const result = randomResult(); // 随机结果
+                showResult(result, betNum); // 显示结果
+                addToHistory(result); // 加入历史
+                voiceBroadcast(result); // 语音播报结果
+                betBtn.disabled = false;
+            }, 1200);
+        }
+
+        // 完全随机开奖（皇冠3%，其他4种均分97%）
+        function randomResult() {
+            const random = Math.random();
+            if (random < crownProb) return { target: 'crown', icon: '👑' }; // 皇冠3%
+            const flowerRandom = Math.random();
+            if (flowerRandom < 0.25) return { target: 'spade', icon: '♠️' }; // 黑桃
+            if (flowerRandom < 0.5) return { target: 'heart', icon: '♥️' }; // 红桃
+            if (flowerRandom < 0.75) return { target: 'club', icon: '♣️' }; // 梅花
+            return { target: 'diamond', icon: '♦️' }; // 方块
+        }
+
+        // 显示开奖结果（中奖/未中奖）+ 新增：累加中奖次数
+        function showResult(result, betNum) {
+            const winTarget = selectedTargets.find(item => item.target === result.target);
+            resultIcon.innerHTML = result.icon;
+            
+            if (winTarget) {
+                const bonus = Math.floor(betNum * winTarget.rate);
+                currentScore += bonus;
+                updateScore();
+                resultDesc.className = 'result-desc win';
+                resultDesc.innerHTML = `恭喜中奖！奖金${bonus}积分<br>赔率${winTarget.rate}倍`;
+                playAudio(winAudio); // 中奖音效
+                // 新增：对应目标中奖次数+1
+                winCount[result.target]++;
+                updateWinCount();
+            } else {
+                resultDesc.className = 'result-desc lose';
+                resultDesc.innerHTML = '很遗憾，未中奖';
+                playAudio(loseAudio); // 未中奖音效
+            }
+        }
+
+        // 核心：开奖结果语音播报（适配音量调节）
+        function voiceBroadcast(result) {
+            // 音量为0时，直接不播报
+            if (broadcastVolume === 0) return;
+            // 停止上一次播报（避免重叠）
+            if (synth.speaking) synth.cancel();
+            // 匹配播报文本
+            let broadcastText = '';
+            switch(result.target) {
+                case 'spade': broadcastText = '黑桃'; break;
+                case 'heart': broadcastText = '红桃'; break;
+                case 'club': broadcastText = '梅花'; break;
+                case 'diamond': broadcastText = '方块'; break;
+                case 'crown': broadcastText = '皇冠'; break;
+                default: broadcastText = '';
+            }
+            // 创建播报实例（适配当前音量）
+            const utterThis = new SpeechSynthesisUtterance(broadcastText);
+            utterThis.lang = 'zh-CN'; // 中文播报
+            utterThis.volume = broadcastVolume; // 绑定实时音量
+            utterThis.rate = 1; // 语速（0.5-2可调）
+            utterThis.pitch = 1; // 音调（0-2可调）
+            synth.speak(utterThis); // 开始播报
+        }
+
+        // 开奖历史记录（最多100期）
+        function addToHistory(result) {
+            const now = new Date();
+            const time = `${now.getHours().toString().padStart(2,0)}:${now.getMinutes().toString().padStart(2,0)}:${now.getSeconds().toString().padStart(2,0)}`;
+            historyList.unshift({ issue: issueNum++, icon: result.icon, target: result.target, time: time });
+            if (historyList.length > maxHistory) historyList.pop(); // 超100条删最早
+            renderHistory();
+        }
+
+        // 渲染历史记录
+        function renderHistory() {
+            if (historyList.length === 0) {
+                historyListEl.innerHTML = '<div style="grid-column: 1/-1; color:#ccc; padding:20px 0;">暂无开奖记录</div>';
+                return;
+            }
+            historyListEl.innerHTML = historyList.map(item => `
+                <div class="history-item">
+                    <div class="icon ${item.target === 'crown' ? 'crown-icon' : ''}">${item.icon}</div>
+                    <div class="num">第${item.issue}期</div>
+                </div>
+            `).join('');
+        }
+
+        // 新增：更新中奖次数显示到页面
+        function updateWinCount() {
+            countSpade.innerText = winCount.spade;
+            countHeart.innerText = winCount.heart;
+            countClub.innerText = winCount.club;
+            countDiamond.innerText = winCount.diamond;
+            countCrown.innerText = winCount.crown;
+        }
+
+        // 通用方法：更新积分
+        function updateScore() {
+            scoreEl.innerText = currentScore;
+            betNumEl.max = currentScore;
+        }
+
+        // 通用方法：重置选择
+        function resetSelect() {
+            selectedTargets = [];
+            targetEls.forEach(el => el.classList.remove('active'));
+            resultDesc.innerHTML = '';
+            resultIcon.innerHTML = '';
+        }
+
+        // 通用方法：播放音效
+        function playAudio(audio) {
+            audio.currentTime = 0;
+            audio.play().catch(err => console.log('音效播放失败', err));
+        }
+    </script>
+</body>
+</html>
